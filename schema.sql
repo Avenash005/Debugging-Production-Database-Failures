@@ -22,6 +22,14 @@ CREATE TABLE orders (
     total DECIMAL(10,2) DEFAULT 0.00,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
+ALTER TABLE orders
+ADD CONSTRAINT fk_orders_customer
+FOREIGN KEY (customer_id)
+REFERENCES customers(id)
+ON DELETE CASCADE;
+
+ALTER TABLE orders
+ALTER COLUMN customer_id SET NOT NULL;
 
 -- BUG 2: Missing CHECK Constraint (Invalid Data)
 -- The inventory_count column should have a CHECK(inventory_count >= 0) constraint.
@@ -29,7 +37,7 @@ CREATE TABLE products (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     sku VARCHAR(50) NOT NULL UNIQUE,
-    inventory_count INTEGER DEFAULT 0, -- NO CHECK CONSTRAINT!
+    inventory_count INTEGER DEFAULT 0 CHECK(inventory_count >= 0), -- FIXED: Added CHECK constraint
     price DECIMAL(10,2) NOT NULL
 );
 
@@ -46,7 +54,7 @@ CREATE TABLE order_items (
 -- The order_id column should have a UNIQUE constraint to ensure only one payment record per order.
 CREATE TABLE payments (
     id SERIAL PRIMARY KEY,
-    order_id INTEGER NOT NULL, -- NO UNIQUE CONSTRAINT!
+    order_id INTEGER NOT NULL UNIQUE REFERENCES orders(id) ON DELETE CASCADE, -- FIXED: Added UNIQUE and FK constraint
     amount DECIMAL(10,2) NOT NULL,
     status VARCHAR(20) DEFAULT 'pending', -- Can be 'pending' or 'completed'
     created_at TIMESTAMPTZ DEFAULT NOW()
